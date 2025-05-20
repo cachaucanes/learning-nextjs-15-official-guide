@@ -21,8 +21,8 @@ export default function AboutPage() {
           <div className="max-w-3xl">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">About Acme</h1>
             <p className="text-xl opacity-90">
-              We're building the future of digital experiences. Learn about our
-              mission, values, and the team behind Acme.
+              We&apos;re building the future of digital experiences. Learn about
+              our mission, values, and the team behind Acme.
             </p>
           </div>
         </div>
@@ -46,7 +46,7 @@ export default function AboutPage() {
               customer-centricity, and a relentless pursuit of excellence.
             </p>
             <p className="text-gray-600">
-              Today, we're proud to be at the forefront of technological
+              Today, we&apos;re proud to be at the forefront of technological
               advancement, continuously pushing boundaries and setting new
               standards in the industry.
             </p>
