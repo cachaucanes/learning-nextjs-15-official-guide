@@ -69,10 +69,20 @@ export async function fetchCardData() {
       invoiceStatusPromise,
     ]);
 
-    const numberOfInvoices = Number(data[0][0].count ?? "0");
+    // 🔽 Tipamos los resultados correctamente
+    const invoiceCount = (data[0] as { count: string }[])[0];
+    const customerCount = (data[1] as { count: string }[])[0];
+    const invoiceStatus = (data[2] as { paid: number; pending: number }[])[0];
+
+    const numberOfInvoices = Number(invoiceCount.count ?? "0");
+    const numberOfCustomers = Number(customerCount.count ?? "0");
+    const totalPaidInvoices = formatCurrency(invoiceStatus.paid ?? "0");
+    const totalPendingInvoices = formatCurrency(invoiceStatus.pending ?? "0");
+
+    /* const numberOfInvoices = Number(data[0][0].count ?? "0");
     const numberOfCustomers = Number(data[1][0].count ?? "0");
     const totalPaidInvoices = formatCurrency(data[2][0].paid ?? "0");
-    const totalPendingInvoices = formatCurrency(data[2][0].pending ?? "0");
+    const totalPendingInvoices = formatCurrency(data[2][0].pending ?? "0"); */
 
     return {
       numberOfCustomers,
@@ -124,7 +134,8 @@ export async function fetchFilteredInvoices(
 
 export async function fetchInvoicesPages(query: string) {
   try {
-    const data = await sql`SELECT COUNT(*)
+    type CountResult = { count: number };
+    const data = await sql<CountResult[]>`SELECT COUNT(*)
     FROM "Invoice" as invoices
     JOIN "Customer" as customers ON invoices.customer_id = customers.id
     WHERE
@@ -196,8 +207,8 @@ export async function fetchFilteredCustomers(query: string) {
 		  COUNT(invoices.id) AS total_invoices,
 		  SUM(CASE WHEN invoices.status = 'pending' THEN invoices.amount ELSE 0 END) AS total_pending,
 		  SUM(CASE WHEN invoices.status = 'paid' THEN invoices.amount ELSE 0 END) AS total_paid
-		FROM customers
-		LEFT JOIN invoices ON customers.id = invoices.customer_id
+		FROM "Customer" as customers
+		LEFT JOIN "Invoice" as invoices ON customers.id = invoices.customer_id
 		WHERE
 		  customers.name ILIKE ${`%${query}%`} OR
         customers.email ILIKE ${`%${query}%`}

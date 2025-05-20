@@ -12,6 +12,7 @@ import { Button } from "@/app/ui/button";
 import { State, updateInvoice } from "@/app/lib/actions";
 import { notFound } from "next/navigation";
 import { useActionState } from "react";
+import Spinner from "../feedback/Spinner";
 
 export default function EditInvoiceForm({
   invoice,
@@ -23,10 +24,20 @@ export default function EditInvoiceForm({
   if (!invoice) {
     notFound();
   }
-  const initialState: State = { message: null, errors: {} };
-  const updateInvoiceWithId = updateInvoice.bind(null, invoice.id);
+  const initialState: State = {
+    message: "",
+    errors: {},
+    values: { customerId: "", amount: "", status: "" },
+  };
+  /* const updateInvoiceWithId = updateInvoice.bind(null, invoice.id); */
+  const actionWrapper = async (state: State, formData: FormData) => {
+    return await updateInvoice(invoice.id, formData);
+  };
 
-  const [state, formAction] = useActionState(updateInvoiceWithId, initialState);
+  const [state, formAction, isPending] = useActionState(
+    actionWrapper as (state: State, formData: FormData) => Promise<State>,
+    initialState
+  );
   return (
     <form action={formAction}>
       <div className="rounded-md bg-gray-50 p-4 md:p-6">
@@ -154,7 +165,10 @@ export default function EditInvoiceForm({
         >
           Cancel
         </Link>
-        <Button type="submit">Edit Invoice</Button>
+        <Button type="submit">
+          {isPending && <Spinner />}
+          Edit Invoice
+        </Button>
       </div>
     </form>
   );

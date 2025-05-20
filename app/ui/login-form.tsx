@@ -7,7 +7,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { ArrowRightIcon } from "@heroicons/react/20/solid";
 import { Button } from "./button";
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { authenticate, StateLogin } from "../lib/actions";
 import { useSearchParams } from "next/navigation";
 import Spinner from "./feedback/Spinner";
@@ -20,7 +20,31 @@ export default function LoginForm() {
     authenticate,
     initialState
   );
-  console.log(errorMessage, formAction, isPending);
+
+  const [localErrors, setLocalErrors] = useState<{
+    email?: string[] | undefined;
+    password?: string[] | undefined;
+  }>({ email: [], password: [] });
+
+  useEffect(() => {
+    setLocalErrors(errorMessage?.errors || {});
+  }, [errorMessage?.errors]);
+
+  type FieldName = "email" | "password";
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name } = e.target;
+
+    // Si ese campo tiene errores, los eliminamos
+    if (localErrors[name as FieldName]) {
+      setLocalErrors((prev) => {
+        const updated = { ...prev };
+        delete updated[name as FieldName];
+        return updated;
+      });
+    }
+  };
 
   return (
     <form action={formAction} className="space-y-3">
@@ -46,12 +70,15 @@ export default function LoginForm() {
                 placeholder="Enter your email address"
                 // required
                 aria-describedby="email-error"
+                onChange={(e) => {
+                  handleInputChange(e);
+                }}
               />
               <AtSymbolIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
             </div>
             <div id="email-error" aria-live="polite" aria-atomic="true">
-              {errorMessage?.errors?.email &&
-                errorMessage?.errors.email.map((error: string) => (
+              {localErrors?.email &&
+                localErrors?.email.map((error: string) => (
                   <p className="mt-2 text-sm text-red-500" key={error}>
                     {error}
                   </p>
@@ -76,12 +103,15 @@ export default function LoginForm() {
                 // required
                 // minLength={6}
                 aria-describedby="password-error"
+                onChange={(e) => {
+                  handleInputChange(e);
+                }}
               />
               <KeyIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-gray-500 peer-focus:text-gray-900" />
             </div>
             <div id="password-error" aria-live="polite" aria-atomic="true">
-              {errorMessage?.errors?.password &&
-                errorMessage?.errors.password.map((error: string) => (
+              {localErrors?.password &&
+                localErrors?.password.map((error: string) => (
                   <p className="mt-2 text-sm text-red-500" key={error}>
                     {error}
                   </p>

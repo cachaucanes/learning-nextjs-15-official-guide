@@ -1,10 +1,9 @@
 "use server";
-import { signIn } from "@/auth";
+import { signIn } from "@/auth/auth";
 import { prisma } from "@/libs/db";
 import { AuthError } from "next-auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { z } from "zod";
 import { FormInvoiceSchema, signInSchema } from "./zod";
 const sql = prisma.$queryRaw.bind(prisma); // seguir usando sql como alias, y evitar reescribir la función (prisma.$queryRaw<Revenue[]>`SELECT * ...`) en cada función
 
@@ -71,6 +70,7 @@ export async function createInvoice(prevState: State, formData: FormData) {
     // If a database error occurs, return a more specific error.
     return {
       message: "Database Error: Failed to Create Invoice.",
+      error,
     };
   }
   /* const data = await sql`
@@ -84,11 +84,7 @@ export async function createInvoice(prevState: State, formData: FormData) {
 // Use Zod to update the expected types
 const UpdateInvoice = FormInvoiceSchema.omit({ id: true, date: true });
 
-export async function updateInvoice(
-  id: string,
-  prevState: State,
-  formData: FormData
-) {
+export async function updateInvoice(id: string, formData: FormData) {
   const validatedFields = UpdateInvoice.safeParse({
     customerId: formData.get("customerId"),
     amount: formData.get("amount"),
@@ -121,7 +117,7 @@ export async function updateInvoice(
     });
   } catch (error) {
     // We'll log the error to the console for now
-    return { message: "Database Error: Failed to Update Invoice." };
+    return { message: "Database Error: Failed to Update Invoice.", error };
   }
   revalidatePath("/dashboard/invoices");
   redirect("/dashboard/invoices");
@@ -157,12 +153,15 @@ export async function authenticate(
   }
   try {
     const user = await signIn("credentials", formData);
-    console.log(user);
-
     return user;
-  } catch (error) {
+  } catch (error: unknown) {
     // Filtrar el NEXT_REDIRECT
-    if ((error as any).digest === "NEXT_REDIRECT") {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "digest" in error &&
+      (error as { digest: string }).digest === "NEXT_REDIRECT"
+    ) {
       return; // No hacer nada, redirección en curso
     }
     if (error instanceof AuthError) {
